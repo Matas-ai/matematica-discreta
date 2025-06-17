@@ -378,8 +378,35 @@ class Entrega {
     /*
      * Determinau si el graf `g` (no dirigit) té cicles.
      */
-    static boolean exercici1(int[][] g) {
-      throw new UnsupportedOperationException("pendent");
+    static boolean exercici1(int[][] graf) {
+       int n = graf.length;
+        boolean[] visitat = new boolean[n];
+        int[] pare = new int[n];
+        Arrays.fill(pare, -1);
+
+        for (int vInicial = 0; vInicial < n; vInicial++) {
+            if (!visitat[vInicial]) {
+                ArrayList<Integer> pila = new ArrayList<>();
+                pila.add(vInicial);
+                visitat[vInicial] = true;
+
+                while (!pila.isEmpty()) {
+                    int actual = pila.remove(pila.size() - 1);
+
+                    for (int veinat : graf[actual]) {
+                        if (!visitat[veinat]) {
+                            visitat[veinat] = true;
+                            pare[veinat] = actual;
+                            pila.add(veinat);
+                        } else if (veinat != pare[actual]) {
+                            return true; // Hi ha cicle
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
     }
 
     /*
@@ -387,7 +414,76 @@ class Entrega {
      * 10.
      */
     static boolean exercici2(int[][] g1, int[][] g2) {
-      throw new UnsupportedOperationException("pendent");
+      int n = g1.length;
+        if (g2.length != n) return false;
+
+        int[] grausG1 = new int[n];
+        int[] grausG2 = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            grausG1[i] = g1[i].length;
+            grausG2[i] = g2[i].length;
+        }
+
+        Arrays.sort(grausG1);
+        Arrays.sort(grausG2);
+
+        for (int i = 0; i < n; i++) {
+            if (grausG1[i] != grausG2[i]) return false;
+        }
+
+        int[] permutacio = new int[n];
+        for (int i = 0; i < n; i++) permutacio[i] = i;
+
+        do {
+            if (comprovaIsomorfisme(g1, g2, permutacio)) return true;
+        } while (proximaPermutacio(permutacio));
+
+        return false;
+    }
+
+    // Comprova si g1 és isomorf a g2 sota la permutació donada
+    static boolean comprovaIsomorfisme(int[][] g1, int[][] g2, int[] perm) {
+        int n = perm.length;
+
+        for (int i = 0; i < n; i++) {
+            boolean[] adj1 = new boolean[n];
+            for (int veinat : g1[i]) {
+                adj1[perm[veinat]] = true;
+            }
+
+            boolean[] adj2 = new boolean[n];
+            for (int veinat : g2[perm[i]]) {
+                adj2[veinat] = true;
+            }
+
+            if (!Arrays.equals(adj1, adj2)) return false;
+        }
+
+        return true;
+    }
+
+    // Genera la següent permutació lexicogràfica
+    static boolean proximaPermutacio(int[] perm) {
+        int i = perm.length - 2;
+        while (i >= 0 && perm[i] >= perm[i + 1]) i--;
+        if (i < 0) return false;
+
+        int j = perm.length - 1;
+        while (perm[j] <= perm[i]) j--;
+
+        int tmp = perm[i];
+        perm[i] = perm[j];
+        perm[j] = tmp;
+
+        for (int k = i + 1, l = perm.length - 1; k < l; k++, l--) {
+            tmp = perm[k];
+            perm[k] = perm[l];
+            perm[l] = tmp;
+        }
+
+        return true;
+    }
     }
 
     /*
@@ -398,7 +494,52 @@ class Entrega {
      * vèrtex.
      */
     static int[] exercici3(int[][] g, int r) {
-      throw new UnsupportedOperationException("pendent");
+     static int[] exercici3(int[][] graf, int arrel) {
+        boolean[] visitat = new boolean[graf.length];
+        List<Integer> resultatPostordre = new ArrayList<>();
+
+        if (conteCicle(graf, arrel, -1, visitat)) return null;
+
+        for (boolean v : visitat) {
+            if (!v) return null;
+        }
+
+        Arrays.fill(visitat, false);
+        dfsPostordre(graf, arrel, visitat, resultatPostordre);
+
+        int[] resultat = new int[resultatPostordre.size()];
+        for (int i = 0; i < resultatPostordre.size(); i++) {
+            resultat[i] = resultatPostordre.get(i);
+        }
+
+        return resultat;
+    }
+
+    // DFS per detectar cicles
+    static boolean conteCicle(int[][] graf, int actual, int pare, boolean[] visitat) {
+        visitat[actual] = true;
+
+        for (int veinat : graf[actual]) {
+            if (!visitat[veinat]) {
+                if (conteCicle(graf, veinat, actual, visitat)) return true;
+            } else if (veinat != pare) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // DFS postordre clàssic
+    static void dfsPostordre(int[][] graf, int actual, boolean[] visitat, List<Integer> resultat) {
+        visitat[actual] = true;
+        for (int veinat : graf[actual]) {
+            if (!visitat[veinat]) {
+                dfsPostordre(graf, veinat, visitat, resultat);
+            }
+        }
+        resultat.add(actual);
+    }
     }
 
     /*
@@ -426,7 +567,49 @@ class Entrega {
      * Si és impossible, retornau -1.
      */
     static int exercici4(char[][] mapa) {
-      throw new UnsupportedOperationException("pendent");
+       static int exercici4(char[][] mapa) {
+        int files = mapa.length;
+        int columnes = mapa[0].length;
+        boolean[][] visitat = new boolean[files][columnes];
+
+        int[] movF = {-1, 1, 0, 0}; // Moviments verticals
+        int[] movC = {0, 0, -1, 1}; // Moviments horitzontals
+
+        ArrayList<int[]> cua = new ArrayList<>();
+
+        // Localitzar l'origen 'O'
+        for (int i = 0; i < files; i++) {
+            for (int j = 0; j < columnes; j++) {
+                if (mapa[i][j] == 'O') {
+                    cua.add(new int[]{i, j, 0});
+                    visitat[i][j] = true;
+                    break;
+                }
+            }
+        }
+
+        int idx = 0;
+        while (idx < cua.size()) {
+            int[] pos = cua.get(idx++);
+            int f = pos[0], c = pos[1], passos = pos[2];
+
+            if (mapa[f][c] == 'D') return passos;
+
+            for (int k = 0; k < 4; k++) {
+                int nf = f + movF[k];
+                int nc = c + movC[k];
+
+                if (nf >= 0 && nf < files && nc >= 0 && nc < columnes &&
+                    !visitat[nf][nc] && mapa[nf][nc] != '#') {
+                    visitat[nf][nc] = true;
+                    cua.add(new int[]{nf, nc, passos + 1});
+                }
+            }
+        }
+
+        return -1; // Destí no trobat
+    }
+}
     }
 
     /*
